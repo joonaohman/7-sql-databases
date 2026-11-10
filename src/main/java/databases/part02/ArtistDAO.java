@@ -1,5 +1,9 @@
 package databases.part02;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +23,7 @@ public class ArtistDAO {
      * Creates a new ArtistDAO that uses the specified connection string to connect
      * to the database. For example: "jdbc:sqlite:data/Chinook_Sqlite.sqlite"
      *
-     * @param connectionString, see https://www.baeldung.com/java-jdbc-url-format
+     * @param connectionString
      */
     public ArtistDAO(String connectionString) {
         this.connectionString = connectionString;
@@ -43,6 +47,24 @@ public class ArtistDAO {
          * to the database. You can't "hard code" the connection string, as that would
          * make tests run against your actual database, which may have unexpected data.
          */
+
+        try (
+            Connection connection = DriverManager.getConnection(connectionString);
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT ArtistId, Name FROM Artist ORDER BY Name ASC");
+            ResultSet resultSet = preparedStatement.executeQuery()
+        ) {
+
+            while (resultSet.next()) {
+                long id = resultSet.getLong("ArtistId");
+                String name = resultSet.getString("Name");
+
+                artists.add(new Artist(id, name));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return artists;
     }
@@ -71,6 +93,29 @@ public class ArtistDAO {
          * to the database. You can't "hard code" the connection string, as that would
          * make tests run against your actual database, which may have unexpected data.
          */
+
+        try (
+            Connection connection = DriverManager.getConnection(connectionString);
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT ArtistId, Name FROM Artist WHERE ArtistId = ?");
+        ) {
+
+            preparedStatement.setLong(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    long artistId = resultSet.getLong("ArtistId");
+                    String name = resultSet.getString("Name");
+
+                    return new Artist(artistId, name);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 }

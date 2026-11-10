@@ -1,5 +1,10 @@
 package databases.part03;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
 
 import databases.part02.Artist;
@@ -35,6 +40,9 @@ public class AlbumDAO {
      *         sorted by AlbumId in ascending order.
      */
     public List<Album> getAlbumsByArtist(Artist artist) {
+
+        List<Album> albums = new ArrayList<>();
+
         /*
          * hint: use the artist.getId() method to get the artist's id and add it to the
          * SQL query using PreparedStatement's setLong() method. See the previous hint
@@ -46,7 +54,28 @@ public class AlbumDAO {
          *
          * Make sure to sort the albums by AlbumId in ascending order (low to high).
          */
-        return null;
+
+        try (
+                Connection connection = DriverManager.getConnection(connectionString);
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT AlbumId, Title, ArtistId FROM Album WHERE ArtistId = ? ORDER BY AlbumId ASC")) {
+
+            statement.setLong(1, artist.getId());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    albums.add(new Album(
+                            resultSet.getLong("AlbumId"),
+                            resultSet.getString("Title"),
+                            resultSet.getLong("ArtistId")));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return albums;
     }
 
     /**
@@ -57,6 +86,7 @@ public class AlbumDAO {
      * @return true if the album was added successfully, false otherwise.
      */
     public boolean addAlbum(Album album) {
+
         /*
          * hint 1: use PreparedStatement's setString() and setLong() methods to
          * add the album's title and artist id to the SQL query. Leave the AlbumId
@@ -67,6 +97,21 @@ public class AlbumDAO {
          *
          * Remember to use the `connectionString` instead of hard coding it ;)
          */
+
+        try (
+                Connection connection = DriverManager.getConnection(connectionString);
+                PreparedStatement statement = connection.prepareStatement(
+                        "INSERT INTO Album (Title, ArtistId) VALUES (?, ?)")) {
+
+            statement.setString(1, album.getTitle());
+            statement.setLong(2, album.getArtistId());
+
+            return statement.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
 
@@ -78,6 +123,7 @@ public class AlbumDAO {
      * @return true if the album was updated successfully, false otherwise.
      */
     public boolean updateAlbum(Album album) {
+
         /*
          * hint 1: use PreparedStatement's setString() and setLong() methods to
          * add the album's title and artist id to the SQL query. Do not change the
@@ -86,6 +132,22 @@ public class AlbumDAO {
          * Remember to use the `connectionString` instead of hard coding it, otherwise
          * your tests will be deleting albums from your actual database!
          */
+
+        try (
+                Connection connection = DriverManager.getConnection(connectionString);
+                PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE Album SET Title = ?, ArtistId = ? WHERE AlbumId = ?")) {
+
+            statement.setString(1, album.getTitle());
+            statement.setLong(2, album.getArtistId());
+            statement.setLong(3, album.getId());
+
+            return statement.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
 
@@ -97,12 +159,27 @@ public class AlbumDAO {
      * @return true if the album was deleted successfully, false otherwise.
      */
     public boolean deleteAlbum(Album album) {
+
         /*
          * See hints for the methods above.
          *
          * Remember to use the `connectionString` instead of hard coding it, otherwise
          * your tetss will be deleting albums from your actual database!
          */
+
+        try (
+                Connection connection = DriverManager.getConnection(connectionString);
+                PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM Album WHERE AlbumId = ?")) {
+
+            statement.setLong(1, album.getId());
+
+            return statement.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
 }
